@@ -1,0 +1,8 @@
+-- 添加管理员用户
+INSERT INTO users (username, password, email, role, status) 
+VALUES ('admin', '9itNKA6nVs0ZkGw321Tu', 'admin@example.com', 'admin', 1)
+ON DUPLICATE KEY UPDATE 
+    password = VALUES(password),
+    email = VALUES(email),
+    role = VALUES(role),
+    status = VALUES(status); 
