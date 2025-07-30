@@ -125,21 +125,11 @@ const routes = [
         component: () => import('../views/settings/Jenkins.vue')
       },
       
-      // 软件管理路由
+      // 批量执行路由
       {
-        path: 'software/app-store',
-        name: 'app-store',
-        component: () => import('../views/software/AppStore.vue')
-      },
-      {
-        path: 'software/update',
-        name: 'software-update',
-        component: () => import('../views/software/Update.vue')
-      },
-      {
-        path: 'software/simple-deploy',
-        name: 'simple-deploy',
-        component: () => import('../views/software/SimpleDeploy.vue')
+        path: 'batch-execute',
+        name: 'batch-execute',
+        component: () => import('../views/batch/BatchExecute.vue')
       },
       
       // AI助手路由

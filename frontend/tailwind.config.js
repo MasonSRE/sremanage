@@ -6,6 +6,9 @@ module.exports = {
     ],
     theme: {
       extend: {
+        fontFamily: {
+          'sans': ['"PingFang SC"', '"Microsoft YaHei"', '"Hiragino Sans GB"', '"Source Han Sans SC"', '"Noto Sans CJK SC"', '"WenQuanYi Micro Hei"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', '"Open Sans"', '"Helvetica Neue"', 'sans-serif'],
+        },
         colors: {
           primary: {
             50: '#f0f9ff',

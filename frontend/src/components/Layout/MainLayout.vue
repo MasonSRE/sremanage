@@ -169,14 +169,9 @@ const menus = [
     ]
   },
   {
-    key: 'software',
-    icon: CubeIcon,
-    label: '软件管理',
-    children: [
-      { key: 'app-store', icon: CubeIcon, label: '应用商店' },
-      { key: 'simple-deploy', icon: RocketLaunchIcon, label: '简化部署' },
-      { key: 'software-update', icon: ArrowsRightLeftIcon, label: '更新管理' }
-    ]
+    key: 'batch-execute',
+    icon: CommandLineIcon,
+    label: '批量执行'
   },
   {
     key: 'ai-assistant',
