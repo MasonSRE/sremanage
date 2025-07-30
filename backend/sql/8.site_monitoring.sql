@@ -1,5 +1,10 @@
 -- 站点监控表结构
 
+-- 设置字符集确保中文字符正确处理
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+SET character_set_connection=utf8mb4;
+
 -- 站点监控配置表
 CREATE TABLE IF NOT EXISTS site_monitoring (
     id INT AUTO_INCREMENT PRIMARY KEY,

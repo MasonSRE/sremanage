@@ -1,6 +1,11 @@
 -- 统一的应用商店数据库设计
 -- 支持模板化配置的应用管理系统
 
+-- 设置字符集确保中文字符正确处理
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+SET character_set_connection=utf8mb4;
+
 -- 应用模板表 - 存储应用的配置模板
 CREATE TABLE IF NOT EXISTS app_templates (
     id VARCHAR(50) PRIMARY KEY,

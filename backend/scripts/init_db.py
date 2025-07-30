@@ -27,9 +27,19 @@ def execute_sql_files():
     sql_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'sql')
     
     try:
-        # 连接数据库
-        conn = pymysql.connect(**db_config)
+        # 连接数据库，指定UTF-8字符集防止中文乱码
+        conn = pymysql.connect(
+            charset='utf8mb4',
+            use_unicode=True,
+            **db_config
+        )
         cursor = conn.cursor()
+        
+        # 设置连接字符集，确保中文字符正确处理
+        cursor.execute("SET NAMES utf8mb4")
+        cursor.execute("SET CHARACTER SET utf8mb4")
+        cursor.execute("SET character_set_connection=utf8mb4")
+        conn.commit()
         
         # 创建版本控制表（如果不存在）
         cursor.execute("""

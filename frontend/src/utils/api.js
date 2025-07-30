@@ -41,7 +41,22 @@ const api = {
     
     try {
       const response = await fetch(`${API_BASE_URL}${url}`, options)
-      const data = await response.json()
+      
+      // 安全地解析JSON响应 - 先读取文本避免body stream重复读取问题
+      const responseText = await response.text()
+      let data
+      
+      if (responseText.trim()) {
+        try {
+          data = JSON.parse(responseText)
+        } catch (parseError) {
+          console.error(`JSON parse error for ${url}:`, parseError)
+          console.error('Response text that failed to parse:', responseText)
+          throw new Error(`服务器返回了无效的JSON响应: ${parseError.message}`)
+        }
+      } else {
+        data = { success: true, message: 'Empty response' }
+      }
       
       console.debug('API Response:', options.method, `${API_BASE_URL}${url}`, data)
       
@@ -95,16 +110,21 @@ export const fetchApi = async (endpoint, options = {}) => {
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     
-    // 安全地解析JSON响应
+    // 安全地解析JSON响应 - 先读取文本避免body stream重复读取问题
     let data;
-    try {
-      data = await response.json();
-    } catch (parseError) {
-      // 只有在解析JSON失败时才记录详细错误
-      const responseText = await response.text();
-      console.error(`JSON parse error for ${endpoint}:`, parseError);
-      console.error('Response text that failed to parse:', responseText);
-      throw new Error(`服务器返回了无效的JSON响应: ${parseError.message}`);
+    const responseText = await response.text();
+    
+    if (responseText.trim()) {
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(`JSON parse error for ${endpoint}:`, parseError);
+        console.error('Response text that failed to parse:', responseText);
+        throw new Error(`服务器返回了无效的JSON响应: ${parseError.message}`);
+      }
+    } else {
+      // 空响应，设置为默认结构
+      data = { success: true, message: 'Empty response' };
     }
     
     // 检查是否是 token 过期
