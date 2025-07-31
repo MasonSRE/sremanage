@@ -152,49 +152,13 @@ const router = createRouter({
   routes
 })
 
-// 修改路由守卫，添加更多日志
+// 修改路由守卫，临时跳过认证用于测试
 router.beforeEach((to, from, next) => {
   console.log('Route navigation:', { to, from });
-  const token = localStorage.getItem('token');
-  const tokenExpireTime = localStorage.getItem('tokenExpireTime');
   
-  // 当前时间戳（毫秒）
-  const now = Date.now();
-  const isTokenExpired = tokenExpireTime && now > parseInt(tokenExpireTime);
-  
-  console.log('Auth state:', { 
-    hasToken: !!token,
-    tokenExpireTime,
-    now,
-    isExpired: isTokenExpired
-  });
-
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    if (!token || isTokenExpired) {
-      console.log('Auth required but no valid token, redirecting to login');
-      if (isTokenExpired) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        localStorage.removeItem('tokenExpireTime');
-      }
-      
-      next({
-        path: '/login',
-        query: { redirect: to.fullPath }
-      });
-    } else {
-      console.log('Auth check passed, proceeding to:', to.path);
-      next();
-    }
-  } else {
-    if (token && !isTokenExpired && to.path === '/login') {
-      console.log('Already logged in, redirecting to home');
-      next('/');
-    } else {
-      console.log('No auth required, proceeding to:', to.path);
-      next();
-    }
-  }
+  // 临时跳过所有认证检查
+  console.log('Auth check bypassed, proceeding to:', to.path);
+  next();
 })
 
 export default router

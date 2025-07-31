@@ -1,0 +1,8 @@
+# ... 其他忽略规则 ...
+
+# 配置文件
+config/mysql.cnf 
+.env
+
+# 日志文件
+logs/app.log
