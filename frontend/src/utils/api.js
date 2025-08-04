@@ -108,11 +108,15 @@ export const fetchApi = async (endpoint, options = {}) => {
       config.body = JSON.stringify(config.body);
     }
 
+    console.debug('API Request:', config.method || 'GET', `${API_BASE_URL}${endpoint}`, config.body ? JSON.parse(config.body) : null);
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     
     // 安全地解析JSON响应 - 先读取文本避免body stream重复读取问题
     let data;
     const responseText = await response.text();
+    
+    console.debug('Raw response:', response.status, responseText.substring(0, 200));
     
     if (responseText.trim()) {
       try {
@@ -120,12 +124,27 @@ export const fetchApi = async (endpoint, options = {}) => {
       } catch (parseError) {
         console.error(`JSON parse error for ${endpoint}:`, parseError);
         console.error('Response text that failed to parse:', responseText);
-        throw new Error(`服务器返回了无效的JSON响应: ${parseError.message}`);
+        console.error('Response headers:', Object.fromEntries(response.headers.entries()));
+        console.error('Response status:', response.status, response.statusText);
+        
+        // 检查是否是HTML响应
+        if (responseText.trim().startsWith('<')) {
+          throw new Error(`服务器返回了HTML页面而不是JSON数据。这通常意味着认证问题或路由错误。状态码: ${response.status}`);
+        } else {
+          throw new Error(`服务器返回了无效的JSON响应: ${parseError.message}。响应内容: ${responseText.substring(0, 100)}...`);
+        }
       }
     } else {
       // 空响应，设置为默认结构
-      data = { success: true, message: 'Empty response' };
+      console.warn(`Empty response for ${endpoint}, status: ${response.status}`);
+      data = { 
+        success: response.ok, 
+        message: response.ok ? 'Empty response' : `Empty error response (${response.status})`,
+        data: null 
+      };
     }
+    
+    console.debug('Parsed data:', data);
     
     // 检查是否是 token 过期
     if (!response.ok && (
@@ -146,13 +165,27 @@ export const fetchApi = async (endpoint, options = {}) => {
     }
 
     if (!response.ok) {
-      throw new Error(data.message || `请求失败(${response.status})`);
+      const errorMessage = data.message || `请求失败(${response.status} ${response.statusText})`;
+      console.error('API Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data,
+        endpoint: endpoint
+      });
+      throw new Error(errorMessage);
     }
 
+    console.debug('API Success:', endpoint, data);
     return data;
   } catch (error) {
+    console.error('API Request Failed:', {
+      endpoint: endpoint,
+      error: error.message,
+      stack: error.stack
+    });
+    
     if (error.message === 'Failed to fetch') {
-      throw new Error('无法连接到服务器，请检查后端服务是否正常运行');
+      throw new Error('无法连接到服务器，请检查网络连接和后端服务是否正常运行');
     }
     throw error;
   }

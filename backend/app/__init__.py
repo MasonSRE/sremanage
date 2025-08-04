@@ -12,6 +12,7 @@ from app.routes import software
 from app.utils.database import init_app as init_db
 from app.routes import ops
 from app.routes.aliyun import aliyun
+from config import Config
 from app.routes.cloud_providers import cloud_providers
 from app.routes.stats import stats_bp
 from app.routes.hosts_unified import hosts_unified_bp
@@ -61,6 +62,13 @@ def create_app(config_name='development'):
     
     # 初始化数据库
     init_db(app)
+    
+    # 初始化Phase 5组件
+    try:
+        Config.init_app(app)
+        logger.info("✅ Phase 5 组件初始化成功")
+    except Exception as e:
+        logger.warning(f"⚠️ Phase 5 组件初始化警告: {e}")
     
     # 注册蓝图
     from app.api.auth import auth_bp

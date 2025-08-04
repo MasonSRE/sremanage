@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test</title>
+</head>
+<body>
+    <div id="app">
+        <h1>Debug Test Page</h1>
+        <p>If you can see this, HTML is working</p>
+    </div>
+    <script>
+        console.log('Debug script running');
+        // Test if we can access the dev server
+        fetch('/src/main.js')
+            .then(response => response.text())
+            .then(text => {
+                console.log('main.js loaded successfully');
+                console.log(text.substring(0, 200));
+            })
+            .catch(error => {
+                console.error('Failed to load main.js:', error);
+            });
+    </script>
+</body>
+</html>

@@ -37,7 +37,7 @@ def token_required(f):
 
 def login_required(f):
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         # 临时跳过认证用于测试
         return f(*args, **kwargs)
         
@@ -70,7 +70,7 @@ def login_required(f):
             
         return f(*args, **kwargs)
         
-    return decorated_function
+    return wrapper
 
 def generate_token(user_id, username):
     """生成JWT token"""

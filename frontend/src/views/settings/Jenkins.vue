@@ -190,12 +190,16 @@ const fetchInstances = async () => {
     const response = await fetchApi('/settings/jenkins', {
       method: 'GET'
     })
+    
     if (response.success) {
       instances.value = response.data
+    } else {
+      console.error('API返回失败:', response)
+      alert(`获取Jenkins实例失败: ${response.message || '未知错误'}`)
     }
   } catch (error) {
     console.error('获取Jenkins实例失败:', error)
-    alert('获取Jenkins实例失败')
+    alert(`获取Jenkins实例失败: ${error.message || error}`)
   }
 }
 

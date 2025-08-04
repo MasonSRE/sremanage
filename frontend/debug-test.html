@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue App Debug Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .debug-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            background: #ffe6e6;
+            border-left-color: #dc3545;
+        }
+        .success {
+            background: #e6ffe6;
+            border-left-color: #28a745;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        pre {
+            background: #1e1e1e;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .btn {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Vue应用调试测试页面</h1>
+    
+    <div class="debug-info">
+        <h3>测试目的</h3>
+        <p>此页面用于诊断Vue应用为什么显示空白页面。请在浏览器开发者工具中查看控制台输出。</p>
+    </div>
+
+    <div class="test-section">
+        <h3>1. 基础环境检测</h3>
+        <div id="env-check">检测中...</div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Vue应用挂载点检测</h3>
+        <div id="mount-check">检测中...</div>
+        <div>预期的Vue挂载点 #app：</div>
+        <div id="app" style="border: 2px dashed #ccc; padding: 10px; margin: 10px 0;">
+            <p style="color: #666;">Vue应用应该挂载到这里</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 网络请求测试</h3>
+        <button class="btn" onclick="testApiConnection()">测试API连接</button>
+        <div id="api-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. 路由访问测试</h3>
+        <div>
+            <button class="btn" onclick="testRoute('/test/simple')">测试简单页面</button>
+            <button class="btn" onclick="testRoute('/jenkins/jobs')">测试Jenkins页面</button>
+            <button class="btn" onclick="testRoute('/')">测试首页</button>
+        </div>
+        <div id="route-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. 控制台日志</h3>
+        <button class="btn" onclick="showConsoleLogs()">显示控制台日志</button>
+        <pre id="console-logs">点击按钮查看控制台日志...</pre>
+    </div>
+
+    <script>
+        // 存储控制台日志
+        const consoleLogs = [];
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            consoleLogs.push({ type: 'log', args, timestamp: new Date().toISOString() });
+            originalLog.apply(console, args);
+        };
+
+        console.error = function(...args) {
+            consoleLogs.push({ type: 'error', args, timestamp: new Date().toISOString() });
+            originalError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            consoleLogs.push({ type: 'warn', args, timestamp: new Date().toISOString() });
+            originalWarn.apply(console, args);
+        };
+
+        // 1. 基础环境检测
+        function checkEnvironment() {
+            const envDiv = document.getElementById('env-check');
+            let html = '';
+
+            // 检查URL和端口
+            html += `<div class="debug-info">当前URL: ${window.location.href}</div>`;
+            html += `<div class="debug-info">端口: ${window.location.port}</div>`;
+            
+            // 检查是否有Vue相关的错误
+            const hasVue = typeof Vue !== 'undefined' || document.querySelector('[data-v-]');
+            html += `<div class="debug-info ${hasVue ? 'success' : 'warning'}">
+                Vue检测: ${hasVue ? '✅ 发现Vue组件痕迹' : '⚠️ 未发现Vue'}
+            </div>`;
+
+            // 检查模块加载
+            const hasModules = document.querySelector('script[type="module"]');
+            html += `<div class="debug-info ${hasModules ? 'success' : 'error'}">
+                ES模块支持: ${hasModules ? '✅ 支持' : '❌ 不支持'}
+            </div>`;
+
+            envDiv.innerHTML = html;
+        }
+
+        // 2. 挂载点检测
+        function checkMountPoint() {
+            const mountDiv = document.getElementById('mount-check');
+            const appDiv = document.getElementById('app');
+            
+            let html = '';
+            html += `<div class="debug-info">挂载点存在: ${appDiv ? '✅ 是' : '❌ 否'}</div>`;
+            
+            if (appDiv) {
+                html += `<div class="debug-info">挂载点内容: "${appDiv.innerHTML.trim().substring(0, 100)}..."</div>`;
+                html += `<div class="debug-info">子节点数量: ${appDiv.children.length}</div>`;
+                
+                const hasVueContent = appDiv.innerHTML.includes('data-v-') || appDiv.querySelector('[data-v-]');
+                html += `<div class="debug-info ${hasVueContent ? 'success' : 'warning'}">
+                    Vue内容: ${hasVueContent ? '✅ 已渲染' : '⚠️ 未渲染'}
+                </div>`;
+            }
+
+            mountDiv.innerHTML = html;
+        }
+
+        // 3. API连接测试
+        async function testApiConnection() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<div class="debug-info">测试中...</div>';
+
+            try {
+                const response = await fetch('/api/settings/jenkins', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const text = await response.text();
+                console.log('API Response Text:', text);
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    data = { error: 'Invalid JSON', response: text };
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="debug-info ${response.ok ? 'success' : 'error'}">
+                        状态: ${response.status} ${response.statusText}
+                    </div>
+                    <div class="debug-info">响应: <pre>${JSON.stringify(data, null, 2)}</pre></div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="debug-info error">
+                        API错误: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 4. 路由测试
+        function testRoute(path) {
+            const resultDiv = document.getElementById('route-result');
+            resultDiv.innerHTML = `<div class="debug-info">准备跳转到: ${path}</div>`;
+            
+            // 延迟跳转，让用户看到消息
+            setTimeout(() => {
+                window.location.href = path;
+            }, 1000);
+        }
+
+        // 5. 显示控制台日志
+        function showConsoleLogs() {
+            const logsDiv = document.getElementById('console-logs');
+            
+            if (consoleLogs.length === 0) {
+                logsDiv.textContent = '暂无控制台日志';
+                return;
+            }
+
+            const formattedLogs = consoleLogs.map(log => {
+                const time = new Date(log.timestamp).toLocaleTimeString();
+                const args = log.args.map(arg => 
+                    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                ).join(' ');
+                return `[${time}] ${log.type.toUpperCase()}: ${args}`;
+            }).join('\n');
+
+            logsDiv.textContent = formattedLogs;
+        }
+
+        // 错误处理
+        window.addEventListener('error', function(event) {
+            console.error('全局错误:', event.error);
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'debug-info error';
+            errorDiv.innerHTML = `
+                <h4>JavaScript错误:</h4>
+                <p>消息: ${event.message}</p>
+                <p>文件: ${event.filename}:${event.lineno}:${event.colno}</p>
+                <p>错误: ${event.error}</p>
+            `;
+            document.body.appendChild(errorDiv);
+        });
+
+        // 初始化检测
+        document.addEventListener('DOMContentLoaded', function() {
+            checkEnvironment();
+            checkMountPoint();
+            
+            // 定期检查挂载点变化
+            setInterval(checkMountPoint, 2000);
+        });
+
+        console.log('🔍 调试页面已加载，开始监控...');
+    </script>
+</body>
+</html>

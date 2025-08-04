@@ -163,6 +163,31 @@ def jenkins_settings():
     if request.method == 'GET':
         try:
             with db.cursor() as cursor:
+                # 首先检查表是否存在
+                cursor.execute("""
+                    SELECT COUNT(*) as count 
+                    FROM information_schema.tables 
+                    WHERE table_schema = DATABASE() 
+                    AND table_name = 'jenkins_settings'
+                """)
+                table_exists = cursor.fetchone()['count'] > 0
+                
+                if not table_exists:
+                    # 表不存在，创建表
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS jenkins_settings (
+                            id INTEGER AUTO_INCREMENT PRIMARY KEY,
+                            name VARCHAR(100) NOT NULL,
+                            url TEXT NOT NULL,
+                            username VARCHAR(100) NOT NULL,
+                            token TEXT NOT NULL,
+                            enabled BOOLEAN NOT NULL DEFAULT 1,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                        )
+                    """)
+                    db.commit()
+                
                 cursor.execute('SELECT * FROM jenkins_settings ORDER BY id')
                 instances = cursor.fetchall()
             
@@ -176,12 +201,44 @@ def jenkins_settings():
                     'enabled': bool(instance['enabled'])
                 } for instance in instances]
             })
+        except Exception as e:
+            print(f"Error in jenkins_settings GET: {str(e)}")
+            return jsonify({
+                'success': False, 
+                'message': f'获取Jenkins设置失败: {str(e)}',
+                'data': []
+            })
         finally:
             db.close()
     
+    # POST request - 添加新的Jenkins实例
     data = request.get_json()
     try:
         with db.cursor() as cursor:
+            # 检查表是否存在，如果不存在则创建
+            cursor.execute("""
+                SELECT COUNT(*) as count 
+                FROM information_schema.tables 
+                WHERE table_schema = DATABASE() 
+                AND table_name = 'jenkins_settings'
+            """)
+            table_exists = cursor.fetchone()['count'] > 0
+            
+            if not table_exists:
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS jenkins_settings (
+                        id INTEGER AUTO_INCREMENT PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL,
+                        url TEXT NOT NULL,
+                        username VARCHAR(100) NOT NULL,
+                        token TEXT NOT NULL,
+                        enabled BOOLEAN NOT NULL DEFAULT 1,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    )
+                """)
+                db.commit()
+            
             cursor.execute(
                 'INSERT INTO jenkins_settings (name, url, username, token, enabled) VALUES (%s, %s, %s, %s, %s)',
                 (data['name'], data['url'], data['username'], data['token'], data.get('enabled', True))
@@ -189,7 +246,8 @@ def jenkins_settings():
         db.commit()
         return jsonify({'success': True, 'message': 'Jenkins实例添加成功'})
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+        print(f"Error in jenkins_settings POST: {str(e)}")
+        return jsonify({'success': False, 'message': f'添加Jenkins实例失败: {str(e)}'})
     finally:
         db.close()
 

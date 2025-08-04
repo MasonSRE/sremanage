@@ -105,6 +105,13 @@
                   >
                     📜 日志查看
                   </button>
+                  <button 
+                    @click="openViewManagementDialog"
+                    :disabled="!selectedInstance"
+                    class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    📁 视图管理
+                  </button>
                 </div>
               </div>
               <div class="flex items-center space-x-4 text-sm text-gray-500">
@@ -134,6 +141,122 @@
                   <span class="inline-flex items-center px-1 py-0.5 rounded text-xs bg-gray-200 text-gray-700" title="快速搜索">Ctrl+K</span>
                   <span class="inline-flex items-center px-1 py-0.5 rounded text-xs bg-gray-200 text-gray-700" title="健康检查">Ctrl+T</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 3 分析面板 -->
+        <div v-if="selectedInstance" class="space-y-6">
+          <!-- 分析功能选项卡 -->
+          <div class="bg-white shadow rounded-lg">
+            <div class="border-b border-gray-200">
+              <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                <button
+                  @click="activeAnalyticsTab = 'performance'"
+                  :class="[
+                    'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    activeAnalyticsTab === 'performance'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ]"
+                >
+                  📊 性能监控
+                </button>
+                <button
+                  @click="activeAnalyticsTab = 'trends'"
+                  :class="[
+                    'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    activeAnalyticsTab === 'trends'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ]"
+                >
+                  📈 趋势分析
+                </button>
+                <button
+                  @click="activeAnalyticsTab = 'history'"
+                  :class="[
+                    'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    activeAnalyticsTab === 'history'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ]"
+                >
+                  📋 构建分析
+                </button>
+                <button
+                  @click="activeAnalyticsTab = 'prediction'"
+                  :class="[
+                    'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    activeAnalyticsTab === 'prediction'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ]"
+                >
+                  🔮 智能预测
+                </button>
+                <button
+                  @click="activeAnalyticsTab = 'failure'"
+                  :class="[
+                    'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    activeAnalyticsTab === 'failure'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ]"
+                >
+                  🔍 失败分析
+                </button>
+                <button
+                  @click="activeAnalyticsTab = 'optimization'"
+                  :class="[
+                    'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                    activeAnalyticsTab === 'optimization'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ]"
+                >
+                  ⚡ 优化建议
+                </button>
+              </nav>
+            </div>
+            
+            <!-- 分析面板内容 -->
+            <div class="p-6">
+              <!-- 性能监控面板 -->
+              <div v-show="activeAnalyticsTab === 'performance'">
+                <PerformanceMetrics :instance-id="selectedInstance" />
+              </div>
+              
+              <!-- 趋势分析面板 -->
+              <div v-show="activeAnalyticsTab === 'trends'">
+                <BuildTrendsChart :instance-id="selectedInstance" />
+              </div>
+              
+              <!-- 构建历史分析面板 -->
+              <div v-show="activeAnalyticsTab === 'history'">
+                <BuildHistoryAnalytics :instance-id="selectedInstance" />
+              </div>
+              
+              <!-- Phase 4: 智能预测面板 -->
+              <div v-show="activeAnalyticsTab === 'prediction'">
+                <BuildPredictionAnalysis 
+                  :instance-id="selectedInstance" 
+                  :available-jobs="jobs.map(job => job.name)"
+                />
+              </div>
+              
+              <!-- Phase 4: 失败分析面板 -->
+              <div v-show="activeAnalyticsTab === 'failure'">
+                <FailureAnalysis 
+                  :instance-id="selectedInstance" 
+                  :available-jobs="jobs.map(job => job.name)"
+                />
+              </div>
+              
+              <!-- Phase 4: 优化建议面板 -->
+              <div v-show="activeAnalyticsTab === 'optimization'">
+                <OptimizationRecommendations :instance-id="selectedInstance" />
               </div>
             </div>
           </div>
@@ -194,6 +317,14 @@
                 <option value="failure">❌ 失败</option>
                 <option value="building">🟡 构建中</option>
                 <option value="unknown">❓ 未知</option>
+              </select>
+              
+              <select 
+                v-model="selectedView"
+                class="block w-full sm:w-32 px-3 py-2 border border-gray-300 bg-white rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">📁 全部视图</option>
+                <option v-for="view in jenkinsViews" :key="view.name" :value="view.name">{{ view.name }}</option>
               </select>
               
               <select 
@@ -552,10 +683,238 @@
     </Dialog>
   </TransitionRoot>
   </div>
+
+  <!-- 视图管理对话框 -->
+  <TransitionRoot appear :show="showViewDialog" as="template">
+    <Dialog as="div" @close="showViewDialog = false" class="relative z-10">
+      <TransitionChild
+        enter="ease-out duration-300"
+        enter-from="opacity-0"
+        enter-to="opacity-100"
+        leave="ease-in duration-200"
+        leave-from="opacity-100"
+        leave-to="opacity-0"
+      >
+        <div class="fixed inset-0 bg-black bg-opacity-25" />
+      </TransitionChild>
+
+      <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+          <TransitionChild
+            enter="ease-out duration-300"
+            enter-from="opacity-0 scale-95"
+            enter-to="opacity-100 scale-100"
+            leave="ease-in duration-200"
+            leave-from="opacity-100 scale-100"
+            leave-to="opacity-0 scale-95"
+          >
+            <DialogPanel class="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all">
+              <div class="p-6">
+                <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 mb-4">
+                  Jenkins视图管理
+                </DialogTitle>
+
+                <!-- 创建新视图表单 -->
+                <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+                  <h4 class="text-sm font-medium text-gray-900 mb-3">创建新视图</h4>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">视图名称</label>
+                      <input 
+                        type="text"
+                        v-model="viewForm.name"
+                        placeholder="输入视图名称"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      >
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700">视图描述</label>
+                      <input 
+                        type="text"
+                        v-model="viewForm.description"
+                        placeholder="输入视图描述"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      >
+                    </div>
+                  </div>
+                  <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700">选择任务</label>
+                    <div class="mt-1 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
+                      <div v-for="job in jobs" :key="job.name" class="flex items-center">
+                        <input 
+                          type="checkbox"
+                          :id="`job-${job.name}`"
+                          :value="job.name"
+                          v-model="viewForm.jobNames"
+                          class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        >
+                        <label :for="`job-${job.name}`" class="ml-2 text-sm text-gray-700">{{ job.name }}</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-4 flex justify-end">
+                    <button
+                      @click="createJenkinsView"
+                      :disabled="isLoading('create-view')"
+                      class="inline-flex justify-center rounded-md border border-transparent bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                    >
+                      <svg v-if="isLoading('create-view')" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      创建视图
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 现有视图列表 -->
+                <div>
+                  <h4 class="text-sm font-medium text-gray-900 mb-3">现有视图</h4>
+                  <div v-if="jenkinsViews.length === 0" class="text-center py-8 text-gray-500">
+                    暂无视图，请创建新视图
+                  </div>
+                  <div v-else class="space-y-3">
+                    <div v-for="view in jenkinsViews" :key="view.name" 
+                         class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                      <div>
+                        <div class="font-medium text-gray-900">{{ view.name }}</div>
+                        <div class="text-sm text-gray-500">{{ view.description || '无描述' }} - {{ view.jobs?.length || 0 }} 个任务</div>
+                      </div>
+                      <div class="flex space-x-2">
+                        <button
+                          @click="deleteJenkinsView(view.name)"
+                          :disabled="isLoading('delete-view')"
+                          class="text-red-600 hover:text-red-900 text-sm disabled:opacity-50"
+                        >
+                          删除
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    @click="showViewDialog = false"
+                  >
+                    关闭
+                  </button>
+                </div>
+              </div>
+            </DialogPanel>
+          </TransitionChild>
+        </div>
+      </div>
+    </Dialog>
+  </TransitionRoot>
+
+  <!-- 配置编辑对话框 -->
+  <TransitionRoot appear :show="showConfigDialog" as="template">
+    <Dialog as="div" @close="showConfigDialog = false" class="relative z-10">
+      <TransitionChild
+        enter="ease-out duration-300"
+        enter-from="opacity-0"
+        enter-to="opacity-100"
+        leave="ease-in duration-200"
+        leave-from="opacity-100"
+        leave-to="opacity-0"
+      >
+        <div class="fixed inset-0 bg-black bg-opacity-25" />
+      </TransitionChild>
+
+      <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+          <TransitionChild
+            enter="ease-out duration-300"
+            enter-from="opacity-0 scale-95"
+            enter-to="opacity-100 scale-100"
+            leave="ease-in duration-200"
+            leave-from="opacity-100 scale-100"
+            leave-to="opacity-0 scale-95"
+          >
+            <DialogPanel class="w-full max-w-6xl transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all">
+              <div class="p-6">
+                <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 mb-4">
+                  编辑任务配置 - {{ currentConfigJob?.name }}
+                </DialogTitle>
+
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">任务显示名称</label>
+                  <input 
+                    type="text"
+                    v-model="jobConfig.displayName"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                </div>
+
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">任务描述</label>
+                  <textarea 
+                    v-model="jobConfig.description"
+                    rows="3"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  ></textarea>
+                </div>
+
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">XML配置</label>
+                  <textarea 
+                    ref="configEditor"
+                    v-model="jobConfig.xml"
+                    rows="20"
+                    class="block w-full font-mono text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    spellcheck="false"
+                  ></textarea>
+                </div>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                  <div class="flex">
+                    <div class="flex-shrink-0">
+                      <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                      </svg>
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm text-yellow-700">
+                        警告：直接编辑XML配置可能导致任务无法正常运行。请确保您了解配置格式后再进行修改。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    @click="showConfigDialog = false"
+                  >
+                    取消
+                  </button>
+                  <button
+                    @click="updateJobConfig"
+                    :disabled="isLoading('update-config')"
+                    class="inline-flex justify-center rounded-md border border-transparent bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                  >
+                    <svg v-if="isLoading('update-config')" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    保存配置
+                  </button>
+                </div>
+              </div>
+            </DialogPanel>
+          </TransitionChild>
+        </div>
+      </div>
+    </Dialog>
+  </TransitionRoot>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import { 
   FolderIcon, 
@@ -569,17 +928,39 @@ import { fetchApi } from '@/utils/api'
 import TimerManager from '@/utils/timer-manager'
 import { notify } from '@/utils/notification'
 import { useLoading } from '@/utils/loading-manager'
+import { 
+  performanceMonitor, 
+  debounce, 
+  throttle,
+  cacheManager,
+  useErrorBoundary 
+} from '@/utils/performance-optimizer'
 import JenkinsInstanceSelector from '@/components/jenkins/JenkinsInstanceSelector.vue'
 import JenkinsStatusCards from '@/components/jenkins/JenkinsStatusCards.vue'
+import BuildHistoryAnalytics from '@/components/jenkins/BuildHistoryAnalytics.vue'
+import BuildTrendsChart from '@/components/jenkins/BuildTrendsChart.vue'
+import PerformanceMetrics from '@/components/jenkins/PerformanceMetrics.vue'
+import BuildPredictionAnalysis from '@/components/jenkins/BuildPredictionAnalysis.vue'  
+import FailureAnalysis from '@/components/jenkins/FailureAnalysis.vue'
+import OptimizationRecommendations from '@/components/jenkins/OptimizationRecommendations.vue'
 
 // 状态管理
 const selectedInstance = ref('')
 const searchQuery = ref('')
 const statusFilter = ref('')
+const selectedView = ref('')
 const showAddDialog = ref(false)
+const showViewDialog = ref(false)
+const showConfigDialog = ref(false)
 const autoRefresh = ref(false)
 const refreshInterval = ref(null)
 const timerManager = new TimerManager()
+
+// 性能优化和错误处理
+const { error, errorInfo, catchError, clearError } = useErrorBoundary()
+const debouncedSearch = debounce((value) => {
+  searchQuery.value = value
+}, 300)
 
 // Loading状态管理
 const {
@@ -587,8 +968,8 @@ const {
   isLoading,
   withLoading,
   withBatchLoading,
-  debounce,
-  throttle
+  debounce: loadingDebounce,
+  throttle: loadingThrottle
 } = useLoading('jenkins')
 const newInstance = ref({
   name: '',
@@ -604,6 +985,24 @@ const logContent = ref('')
 const logSearchQuery = ref('')
 const logLevelFilter = ref('')
 
+// 视图管理相关状态
+const jenkinsViews = ref([])
+const currentView = ref(null)
+const viewForm = ref({
+  name: '',
+  description: '',
+  jobNames: []
+})
+
+// 配置编辑相关状态
+const currentConfigJob = ref(null)
+const jobConfig = ref({
+  xml: '',
+  displayName: '',
+  description: ''
+})
+const configEditor = ref(null)
+
 // 批量操作相关状态
 const selectedJobs = ref([])
 const batchOperationInProgress = ref(false)
@@ -614,6 +1013,7 @@ const lastUpdateTime = ref('')
 const connectionStatus = ref('connected') // 'connected', 'disconnected', 'connecting'
 const updateCounter = ref(0)
 const statusLoading = ref(false)
+const activeAnalyticsTab = ref('performance') // Phase 3 分析面板的激活标签页
 
 // 状态统计数据
 const statusSummary = ref({
@@ -637,7 +1037,9 @@ const filteredJobs = computed(() => {
     const matchesSearch = job.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
                          job.description.toLowerCase().includes(searchQuery.value.toLowerCase())
     const matchesStatus = !statusFilter.value || job.status === statusFilter.value
-    return matchesSearch && matchesStatus
+    const matchesView = !selectedView.value || 
+                       (currentView.value && currentView.value.jobs.some(viewJob => viewJob.name === job.name))
+    return matchesSearch && matchesStatus && matchesView
   })
 })
 
@@ -765,13 +1167,254 @@ const triggerBuild = async (job) => {
 }
 
 const viewDetails = (job) => {
-  console.log('查看详情:', job.name)
-  // TODO: 实现查看详情逻辑
+  if (!selectedInstance.value) {
+    notify.warning('请先选择Jenkins实例')
+    return
+  }
+  
+  // 显示任务详细信息，包括：
+  // 1. 任务基本信息（描述、创建时间、最后构建等）
+  // 2. 构建历史统计
+  // 3. 当前状态详情
+  // 4. 配置摘要
+  
+  const jobDetails = {
+    name: job.name,
+    description: job.description,
+    status: job.status,
+    lastBuildNumber: job.lastBuildNumber,
+    lastBuildTime: job.lastBuildTime,
+    duration: job.duration,
+    type: job.type,
+    buildable: job.buildable
+  }
+  
+  // 创建一个简单的详情展示
+  const detailHtml = `
+    <div class="text-left">
+      <h3 class="text-lg font-semibold mb-3">任务详情: ${job.name}</h3>
+      <div class="space-y-2 text-sm">
+        <div><strong>描述:</strong> ${job.description || '无描述'}</div>
+        <div><strong>状态:</strong> ${getStatusText(job.status)}</div>
+        <div><strong>最后构建:</strong> #${job.lastBuildNumber || '无构建记录'}</div>
+        <div><strong>构建时间:</strong> ${job.lastBuildTime || '-'}</div>
+        <div><strong>持续时间:</strong> ${job.duration || '-'}</div>
+        <div><strong>类型:</strong> ${job.type}</div>
+        <div><strong>是否可构建:</strong> ${job.buildable ? '是' : '否'}</div>
+      </div>
+    </div>
+  `
+  
+  notify.info(detailHtml, { 
+    title: '任务详情',
+    timeout: 0, // 不自动关闭
+    type: 'info'
+  })
 }
 
-const showConfig = (job) => {
-  console.log('查看配置:', job.name)
-  // TODO: 实现查看配置逻辑
+const showConfig = async (job) => {
+  if (!selectedInstance.value) {
+    notify.warning('请先选择Jenkins实例')
+    return
+  }
+  
+  currentConfigJob.value = job
+  await fetchJobConfig(job.name)
+  showConfigDialog.value = true
+}
+
+// 获取任务配置
+const fetchJobConfig = async (jobName) => {
+  return withLoading('fetch-config', async () => {
+    const response = await fetchApi(`/ops/jenkins/config/${selectedInstance.value}/${jobName}`, {
+      method: 'GET'
+    })
+    
+    if (response.success) {
+      jobConfig.value = response.data
+      return response.data
+    } else {
+      throw new Error(response.message)
+    }
+  }, {
+    message: '加载任务配置...',
+    errorMessage: '获取任务配置失败'
+  })
+}
+
+// 更新任务配置
+const updateJobConfig = async () => {
+  if (!selectedInstance.value || !currentConfigJob.value) {
+    notify.warning('请先选择Jenkins实例和任务')
+    return
+  }
+  
+  return withLoading('update-config', async () => {
+    const response = await fetchApi(`/ops/jenkins/config/${selectedInstance.value}/${currentConfigJob.value.name}`, {
+      method: 'POST',
+      body: {
+        config: jobConfig.value.xml
+      }
+    })
+    
+    if (response.success) {
+      notify.success('任务配置更新成功')
+      showConfigDialog.value = false
+      await refreshData()
+      return response.data
+    } else {
+      throw new Error(response.message)
+    }
+  }, {
+    message: '更新任务配置中...',
+    successMessage: '配置更新成功',
+    errorMessage: '配置更新失败'
+  })
+}
+
+// 打开视图管理对话框
+const openViewManagementDialog = () => {
+  fetchJenkinsViews()
+  showViewDialog.value = true
+}
+
+// 获取Jenkins视图列表
+const fetchJenkinsViews = async () => {
+  if (!selectedInstance.value) return
+  
+  return withLoading('fetch-views', async () => {
+    const response = await fetchApi(`/ops/jenkins/views/${selectedInstance.value}`, {
+      method: 'GET'
+    })
+    
+    if (response.success) {
+      jenkinsViews.value = response.data.views || []
+      return response.data
+    } else {
+      throw new Error(response.message)
+    }
+  }, {
+    message: '加载视图列表...',
+    errorMessage: '获取视图列表失败'
+  })
+}
+
+// 创建新视图
+const createJenkinsView = async () => {
+  if (!selectedInstance.value) return
+  
+  if (!viewForm.value.name.trim()) {
+    notify.warning('请输入视图名称')
+    return
+  }
+  
+  return withLoading('create-view', async () => {
+    const response = await fetchApi(`/ops/jenkins/views/${selectedInstance.value}`, {
+      method: 'POST',
+      body: {
+        name: viewForm.value.name,
+        description: viewForm.value.description,
+        jobNames: viewForm.value.jobNames
+      }
+    })
+    
+    if (response.success) {
+      notify.success('视图创建成功')
+      await fetchJenkinsViews()
+      viewForm.value = { name: '', description: '', jobNames: [] }
+      return response.data
+    } else {
+      throw new Error(response.message)
+    }
+  }, {
+    message: '创建视图中...',
+    successMessage: '视图创建成功',
+    errorMessage: '视图创建失败'
+  })
+}
+
+// 删除视图
+const deleteJenkinsView = async (viewName) => {
+  if (!selectedInstance.value || !viewName) return
+  
+  if (!(await notify.confirm(`确定要删除视图 "${viewName}" 吗？此操作不可恢复。`))) {
+    return
+  }
+  
+  return withLoading('delete-view', async () => {
+    const response = await fetchApi(`/ops/jenkins/views/${selectedInstance.value}/${viewName}`, {
+      method: 'DELETE'
+    })
+    
+    if (response.success) {
+      notify.success('视图删除成功')
+      await fetchJenkinsViews()
+      if (selectedView.value === viewName) {
+        selectedView.value = ''
+      }
+      return response.data
+    } else {
+      throw new Error(response.message)
+    }
+  }, {
+    message: '删除视图中...',
+    successMessage: '视图删除成功',
+    errorMessage: '视图删除失败'
+  })
+}
+
+// 更新视图
+const updateJenkinsView = async (viewName, viewData) => {
+  if (!selectedInstance.value || !viewName) return
+  
+  return withLoading('update-view', async () => {
+    const response = await fetchApi(`/ops/jenkins/views/${selectedInstance.value}/${viewName}`, {
+      method: 'PUT',
+      body: viewData
+    })
+    
+    if (response.success) {
+      notify.success('视图更新成功')
+      await fetchJenkinsViews()
+      return response.data
+    } else {
+      throw new Error(response.message)
+    }
+  }, {
+    message: '更新视图中...',
+    successMessage: '视图更新成功',
+    errorMessage: '视图更新失败'
+  })
+}
+
+// 获取视图中的任务
+const fetchViewJobs = async (viewName) => {
+  if (!selectedInstance.value || !viewName) return
+  
+  return withLoading('fetch-view-jobs', async () => {
+    const response = await fetchApi(`/ops/jenkins/views/${selectedInstance.value}/${viewName}/jobs`, {
+      method: 'GET'
+    })
+    
+    if (response.success) {
+      currentView.value = response.data
+      return response.data
+    } else {
+      throw new Error(response.message)
+    }
+  }, {
+    message: '加载视图任务...',
+    errorMessage: '获取视图任务失败'
+  })
+}
+
+// 监听视图选择变化
+const handleViewChange = async () => {
+  if (selectedView.value) {
+    await fetchViewJobs(selectedView.value)
+  } else {
+    currentView.value = null
+  }
 }
 
 // 查看日志
@@ -950,33 +1593,59 @@ const openLogViewerDialog = () => {
 const fetchJobs = async () => {
   if (!selectedInstance.value) return
   
-  return withLoading('fetch-jobs', async () => {
-    const response = await fetchApi(`/ops/jenkins/jobs/${selectedInstance.value}`, {
-      method: 'GET'
-    })
-    
-    if (response.success) {
-      jobs.value = response.data.map(job => ({
-        ...job,
-        id: job.name,
-        description: job.description || `Jenkins任务: ${job.name}`,
-        type: job.buildable ? 'freestyle' : 'disabled',
-        lastBuildTime: job.lastBuildTime ? new Date(job.lastBuildTime).toLocaleString() : '-',
-        duration: job.duration ? `${Math.round(job.duration / 1000)}秒` : '-',
-        lastBuildNumber: job.lastBuildNumber || 0
-      }))
+  const measureName = performanceMonitor.startMeasure('fetch-jobs')
+  
+  try {
+    return await withLoading('fetch-jobs', async () => {
+      // 检查缓存
+      const cacheKey = `jobs-${selectedInstance.value}`
+      const cachedJobs = cacheManager.get(cacheKey)
+      if (cachedJobs) {
+        jobs.value = cachedJobs
+        calculateStatusSummary()
+        return cachedJobs
+      }
       
-      // 计算状态统计
-      calculateStatusSummary()
-      return response.data
-    } else {
-      throw new Error(response.message)
-    }
-  }, {
-    message: '加载任务列表...',
-    errorMessage: '获取Jenkins任务失败',
-    showNotification: false
-  })
+      const response = await performanceMonitor.measureApiCall(
+        'jenkins-jobs-api',
+        fetchApi(`/ops/jenkins/jobs/${selectedInstance.value}`, {
+          method: 'GET'
+        })
+      )
+      
+      if (response.success) {
+        const processedJobs = response.data.map(job => ({
+          ...job,
+          id: job.name,
+          description: job.description || `Jenkins任务: ${job.name}`,
+          type: job.buildable ? 'freestyle' : 'disabled',
+          lastBuildTime: job.lastBuildTime ? new Date(job.lastBuildTime).toLocaleString() : '-',
+          duration: job.duration ? `${Math.round(job.duration / 1000)}秒` : '-',
+          lastBuildNumber: job.lastBuildNumber || 0
+        }))
+        
+        jobs.value = processedJobs
+        
+        // 缓存结果
+        cacheManager.set(cacheKey, processedJobs, 120000) // 缓存2分钟
+        
+        // 计算状态统计
+        calculateStatusSummary()
+        return response.data
+      } else {
+        throw new Error(response.message)
+      }
+    }, {
+      message: '加载任务列表...',
+      errorMessage: '获取Jenkins任务失败',
+      showNotification: false
+    })
+  } catch (error) {
+    catchError(error, { component: 'Jenkins', method: 'fetchJobs' })
+    throw error
+  } finally {
+    performanceMonitor.endMeasure(measureName)
+  }
 }
 
 // 刷新所有数据
@@ -988,8 +1657,14 @@ const refreshData = async () => {
       fetchJobs(),
       fetchJenkinsStatus(),
       fetchQueue(),
-      fetchBuildHistory()
+      fetchBuildHistory(),
+      fetchJenkinsViews()
     ])
+    
+    // 如果选择了视图，刷新视图任务
+    if (selectedView.value) {
+      await fetchViewJobs(selectedView.value)
+    }
     
     // 更新最后更新时间
     lastUpdateTime.value = new Date().toLocaleString()
@@ -1122,8 +1797,13 @@ const toggleAutoRefresh = () => {
 // 监听实例选择变化
 const onInstanceChange = async (instanceId, instanceData) => {
   console.log('Jenkins实例已切换:', instanceId, instanceData)
+  selectedView.value = '' // 重置视图选择
+  currentView.value = null
   await refreshData()
 }
+
+// 监听视图选择变化
+watch(selectedView, handleViewChange)
 
 // 获取构建历史
 const fetchBuildHistory = async () => {
@@ -1281,7 +1961,13 @@ export default {
   name: 'Jenkins',
   components: {
     JenkinsInstanceSelector,
-    JenkinsStatusCards
+    JenkinsStatusCards,
+    BuildHistoryAnalytics,
+    BuildTrendsChart,
+    PerformanceMetrics,
+    BuildPredictionAnalysis,
+    FailureAnalysis,
+    OptimizationRecommendations
   }
 }
 </script>

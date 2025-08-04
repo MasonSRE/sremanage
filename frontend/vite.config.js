@@ -20,13 +20,23 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // 禁用缓存用于调试
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    },
     proxy: {
       '/api': {
-        target: 'http://localhost:5001',
+        target: 'http://localhost:5002',
         changeOrigin: true,
         secure: false,
         ws: true
       }
     }
+  },
+  // 强制重新构建
+  optimizeDeps: {
+    force: true
   }
 });

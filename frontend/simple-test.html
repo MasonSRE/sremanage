@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Test</title>
+  <style>
+    body { margin: 0; padding: 20px; font-family: sans-serif; }
+    #app { min-height: 100px; background: yellow; border: 2px solid red; }
+  </style>
+</head>
+<body>
+  <h1>Before Vue App</h1>
+  <div id="app">LOADING VUE APP...</div>
+  <h1>After Vue App</h1>
+  
+  <script type="module">
+    import { createApp } from '/node_modules/.vite/deps/vue.js?v=7646899f'
+    
+    console.log('Starting Vue app...')
+    
+    const app = createApp({
+      template: '<div style="background: lime; padding: 20px; color: black; font-size: 24px;"><h1>✅ VUE APP IS WORKING!</h1><p>Time: {{ time }}</p></div>',
+      data() {
+        return {
+          time: new Date().toLocaleString()
+        }
+      },
+      mounted() {
+        console.log('Vue app mounted!')
+      }
+    })
+    
+    console.log('About to mount...')
+    app.mount('#app')
+    console.log('Mount complete')
+  </script>
+</body>
+</html>

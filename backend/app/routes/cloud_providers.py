@@ -58,6 +58,36 @@ def get_cloud_providers():
     db = get_db_connection()
     try:
         with db.cursor() as cursor:
+            # 首先检查表是否存在
+            cursor.execute("""
+                SELECT COUNT(*) as count 
+                FROM information_schema.tables 
+                WHERE table_schema = DATABASE() 
+                AND table_name = 'cloud_providers'
+            """)
+            table_exists = cursor.fetchone()['count'] > 0
+            
+            if not table_exists:
+                # 表不存在，创建表
+                print("cloud_providers表不存在，正在创建...")
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS `cloud_providers` (
+                        `id` int(11) NOT NULL AUTO_INCREMENT,
+                        `name` varchar(100) NOT NULL COMMENT '配置名称，如"生产环境阿里云"',
+                        `provider` varchar(50) NOT NULL COMMENT '云厂商类型: aliyun, aws, tencent, huawei, google, azure',
+                        `config` JSON NOT NULL COMMENT '云厂商配置信息',
+                        `region` varchar(50) DEFAULT NULL COMMENT '默认区域',
+                        `enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用',
+                        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        PRIMARY KEY (`id`),
+                        KEY `idx_provider` (`provider`),
+                        KEY `idx_enabled` (`enabled`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='云厂商配置表'
+                """)
+                db.commit()
+                print("cloud_providers表创建成功")
+            
             cursor.execute("""
                 SELECT id, name, provider, config, region, enabled, created_at, updated_at
                 FROM cloud_providers
@@ -83,7 +113,11 @@ def get_cloud_providers():
             })
     except Exception as e:
         logger.error(f"获取云厂商配置失败: {e}")
-        return jsonify({'success': False, 'message': str(e)})
+        return jsonify({
+            'success': False, 
+            'message': f'获取云厂商配置失败: {str(e)}',
+            'data': []
+        })
     finally:
         db.close()
 
@@ -381,6 +415,50 @@ def get_cloud_provider_schemas():
     db = get_db_connection()
     try:
         with db.cursor() as cursor:
+            # 首先检查表是否存在
+            cursor.execute("""
+                SELECT COUNT(*) as count 
+                FROM information_schema.tables 
+                WHERE table_schema = DATABASE() 
+                AND table_name = 'cloud_provider_schemas'
+            """)
+            table_exists = cursor.fetchone()['count'] > 0
+            
+            if not table_exists:
+                # 表不存在，创建表
+                print("cloud_provider_schemas表不存在，正在创建...")
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS `cloud_provider_schemas` (
+                        `id` int(11) NOT NULL AUTO_INCREMENT,
+                        `provider` varchar(50) NOT NULL COMMENT '云厂商类型',
+                        `field_name` varchar(100) NOT NULL COMMENT '字段名称',
+                        `field_type` varchar(50) NOT NULL COMMENT '字段类型: text, password, select, number',
+                        `field_label` varchar(200) NOT NULL COMMENT '字段显示名称',
+                        `is_required` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否必填',
+                        `default_value` varchar(500) DEFAULT NULL COMMENT '默认值',
+                        `options` JSON DEFAULT NULL COMMENT '选项列表（用于select类型）',
+                        `placeholder` varchar(200) DEFAULT NULL COMMENT '占位符',
+                        `help_text` varchar(500) DEFAULT NULL COMMENT '帮助文本',
+                        `sort_order` int(11) NOT NULL DEFAULT 0 COMMENT '排序顺序',
+                        PRIMARY KEY (`id`),
+                        KEY `idx_provider` (`provider`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='云厂商配置字段定义表'
+                """)
+                
+                # 插入基础的配置字段定义
+                cursor.execute("""
+                    INSERT INTO `cloud_provider_schemas` (`provider`, `field_name`, `field_type`, `field_label`, `is_required`, `placeholder`, `help_text`, `sort_order`) VALUES
+                    ('aliyun', 'access_key_id', 'text', 'Access Key ID', 1, '请输入阿里云Access Key ID', '在阿里云控制台的访问控制RAM中创建', 1),
+                    ('aliyun', 'access_key_secret', 'password', 'Access Key Secret', 1, '请输入阿里云Access Key Secret', '对应Access Key ID的密钥', 2),
+                    ('aws', 'access_key_id', 'text', 'Access Key ID', 1, '请输入AWS Access Key ID', '在AWS IAM中创建访问密钥', 1),
+                    ('aws', 'secret_access_key', 'password', 'Secret Access Key', 1, '请输入AWS Secret Access Key', '对应Access Key ID的密钥', 2),
+                    ('tencent', 'secret_id', 'text', 'Secret ID', 1, '请输入腾讯云Secret ID', '在腾讯云控制台的访问管理中创建', 1),
+                    ('tencent', 'secret_key', 'password', 'Secret Key', 1, '请输入腾讯云Secret Key', '对应Secret ID的密钥', 2)
+                """)
+                
+                db.commit()
+                print("cloud_provider_schemas表创建成功")
+            
             cursor.execute("""
                 SELECT provider, field_name, field_type, field_label, is_required, 
                        default_value, options, placeholder, help_text, sort_order
@@ -422,7 +500,11 @@ def get_cloud_provider_schemas():
             })
     except Exception as e:
         logger.error(f"获取云厂商配置字段定义失败: {e}")
-        return jsonify({'success': False, 'message': str(e)})
+        return jsonify({
+            'success': False, 
+            'message': f'获取云厂商配置字段定义失败: {str(e)}',
+            'data': {}
+        })
     finally:
         db.close()
 

@@ -17,3 +17,7 @@ alibabacloud-ecs20140526>=7.0.0
 alibabacloud-domain20180129>=4.0.0
 alibabacloud-cdn20180510>=3.0.0
 PyYAML==6.0.1
+
+# Phase 5 新增依赖
+psutil>=5.8.0
+redis>=4.0.0

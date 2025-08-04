@@ -274,6 +274,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (captchaTimer) {
+    clearInterval(captchaTimer)
     clearTimeout(captchaTimer)
   }
 })

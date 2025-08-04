@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        #console {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Jenkins API测试页面</h1>
+        <p>这个页面用于测试和诊断Jenkins API问题</p>
+        
+        <div>
+            <h3>📡 API测试</h3>
+            <button class="test-button" onclick="testJenkinsInstances()">测试Jenkins实例API</button>
+            <button class="test-button" onclick="testCloudProviders()">测试云厂商API</button>
+            <button class="test-button" onclick="testWithInvalidEndpoint()">测试无效端点</button>
+            <button class="test-button" onclick="clearResults()">清空结果</button>
+        </div>
+        
+        <div>
+            <h3>📊 测试结果</h3>
+            <div id="results"></div>
+        </div>
+        
+        <div>
+            <h3>🖥️ 控制台输出</h3>
+            <div id="console"></div>
+        </div>
+    </div>
+
+    <script>
+        // 重写console方法来捕获输出
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            debug: console.debug
+        };
+
+        const consoleDiv = document.getElementById('console');
+        
+        function addToConsole(type, ...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            consoleDiv.innerHTML += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            
+            // 还是要调用原始的console方法
+            originalConsole[type](...args);
+        }
+
+        console.log = (...args) => addToConsole('log', ...args);
+        console.error = (...args) => addToConsole('error', ...args);
+        console.warn = (...args) => addToConsole('warn', ...args);
+        console.debug = (...args) => addToConsole('debug', ...args);
+
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `<strong>${title}</strong>\n${content}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('console').innerHTML = '';
+        }
+
+        // 复制fetchApi函数 (简化版，用于测试)
+        async function fetchApi(endpoint, options = {}) {
+            try {
+                const token = localStorage.getItem('token');
+                
+                const config = {
+                    ...options,
+                    credentials: 'include',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : '',
+                        'Cache-Control': 'no-cache',
+                        ...options.headers
+                    }
+                };
+
+                if (config.body && typeof config.body === 'object') {
+                    config.body = JSON.stringify(config.body);
+                }
+
+                console.debug('API Request:', config.method || 'GET', `/api${endpoint}`, config.body ? JSON.parse(config.body) : null);
+
+                const response = await fetch(`/api${endpoint}`, config);
+                
+                let data;
+                const responseText = await response.text();
+                
+                console.debug('Raw response:', response.status, responseText.substring(0, 200));
+                
+                if (responseText.trim()) {
+                    try {
+                        data = JSON.parse(responseText);
+                    } catch (parseError) {
+                        console.error(`JSON parse error for ${endpoint}:`, parseError);
+                        console.error('Response text that failed to parse:', responseText);
+                        console.error('Response headers:', Object.fromEntries(response.headers.entries()));
+                        console.error('Response status:', response.status, response.statusText);
+                        
+                        if (responseText.trim().startsWith('<')) {
+                            throw new Error(`服务器返回了HTML页面而不是JSON数据。状态码: ${response.status}`);
+                        } else {
+                            throw new Error(`服务器返回了无效的JSON响应: ${parseError.message}。响应内容: ${responseText.substring(0, 100)}...`);
+                        }
+                    }
+                } else {
+                    console.warn(`Empty response for ${endpoint}, status: ${response.status}`);
+                    data = { 
+                        success: response.ok, 
+                        message: response.ok ? 'Empty response' : `Empty error response (${response.status})`,
+                        data: null 
+                    };
+                }
+                
+                console.debug('Parsed data:', data);
+                
+                if (!response.ok) {
+                    const errorMessage = data.message || `请求失败(${response.status} ${response.statusText})`;
+                    console.error('API Error Response:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        data: data,
+                        endpoint: endpoint
+                    });
+                    throw new Error(errorMessage);
+                }
+
+                console.debug('API Success:', endpoint, data);
+                return data;
+            } catch (error) {
+                console.error('API Request Failed:', {
+                    endpoint: endpoint,
+                    error: error.message,
+                    stack: error.stack
+                });
+                
+                if (error.message === 'Failed to fetch') {
+                    throw new Error('无法连接到服务器');
+                }
+                throw error;
+            }
+        }
+
+        async function testJenkinsInstances() {
+            try {
+                console.log('🧪 开始测试Jenkins实例API...');
+                addResult('info', '测试开始', 'Jenkins实例API测试开始...');
+                
+                const response = await fetchApi('/settings/jenkins');
+                
+                addResult('success', 'Jenkins实例API测试成功', 
+                    `成功获取数据:\n${JSON.stringify(response, null, 2)}`);
+                console.log('✅ Jenkins实例API测试成功');
+            } catch (error) {
+                addResult('error', 'Jenkins实例API测试失败', 
+                    `错误信息: ${error.message}\n堆栈: ${error.stack}`);
+                console.error('❌ Jenkins实例API测试失败:', error);
+            }
+        }
+
+        async function testCloudProviders() {
+            try {
+                console.log('🧪 开始测试云厂商API...');
+                addResult('info', '测试开始', '云厂商API测试开始...');
+                
+                const response = await fetchApi('/cloud-providers');
+                
+                addResult('success', '云厂商API测试成功', 
+                    `成功获取数据:\n${JSON.stringify(response, null, 2)}`);
+                console.log('✅ 云厂商API测试成功');
+            } catch (error) {
+                addResult('error', '云厂商API测试失败', 
+                    `错误信息: ${error.message}\n堆栈: ${error.stack}`);
+                console.error('❌ 云厂商API测试失败:', error);
+            }
+        }
+
+        async function testWithInvalidEndpoint() {
+            try {
+                console.log('🧪 开始测试无效端点...');
+                addResult('info', '测试开始', '无效端点测试开始...');
+                
+                const response = await fetchApi('/invalid-endpoint');
+                
+                addResult('success', '无效端点测试 - 意外成功', 
+                    `意外获取到数据:\n${JSON.stringify(response, null, 2)}`);
+            } catch (error) {
+                addResult('success', '无效端点测试 - 按预期失败', 
+                    `错误信息 (这是预期的): ${error.message}`);
+                console.log('✅ 无效端点测试按预期失败');
+            }
+        }
+
+        // 页面加载时的初始化
+        window.addEventListener('load', () => {
+            console.log('🚀 API测试页面已加载');
+            console.log('当前URL:', window.location.href);
+            console.log('Token存在:', !!localStorage.getItem('token'));
+            addResult('info', '页面初始化', 'API测试页面已准备就绪');
+        });
+    </script>
+</body>
+</html>

@@ -170,8 +170,11 @@ const selectedInstance = computed(() => {
 // Methods
 const handleChange = (event) => {
   const value = event.target.value
-  emit('update:modelValue', value ? parseInt(value) : '')
-  emit('change', value ? parseInt(value) : '', selectedInstance.value)
+  const numericValue = value ? parseInt(value) : null
+  // 确保类型安全：如果解析失败返回空字符串，成功返回数字
+  const safeValue = (numericValue && !isNaN(numericValue)) ? numericValue : ''
+  emit('update:modelValue', safeValue)
+  emit('change', safeValue, selectedInstance.value)
 }
 
 const refresh = async () => {

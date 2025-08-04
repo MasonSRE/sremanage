@@ -2,6 +2,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../components/Layout/MainLayout.vue'
 import Terminal from '../views/terminal/Terminal.vue'
 
+// Jenkins组件静态导入
+import JobList from '../views/jenkins/JobList.vue'
+import JobWizard from '../views/jenkins/JobWizard.vue'
+import BuildMonitor from '../views/jenkins/BuildMonitor.vue'
+import InstanceManager from '../views/jenkins/InstanceManager.vue'
+import Analytics from '../views/jenkins/Analytics.vue'
+
 const routes = [
   {
     path: '/login',
@@ -43,10 +50,52 @@ const routes = [
         name: 'cdn-management',
         component: () => import('../views/ops/CdnManagement.vue')
       },
+      // Jenkins管理路由群组 - 使用统一布局
+      {
+        path: 'jenkins',
+        component: () => import('../components/jenkins/layout/JenkinsLayout.vue'),
+        meta: { requiresAuth: true },
+        children: [
+          {
+            path: '',
+            redirect: '/jenkins/jobs'
+          },
+          {
+            path: 'jobs',
+            name: 'jenkins-jobs',
+            component: JobList,
+            meta: { title: '任务列表' }
+          },
+          {
+            path: 'create',
+            name: 'jenkins-create',
+            component: JobWizard,
+            meta: { title: '创建任务' }
+          },
+          {
+            path: 'monitor',
+            name: 'jenkins-monitor',
+            component: BuildMonitor,
+            meta: { title: '构建监控' }
+          },
+          {
+            path: 'instances',
+            name: 'jenkins-instances',
+            component: InstanceManager,
+            meta: { title: '实例管理' }
+          },
+          {
+            path: 'analytics',
+            name: 'jenkins-analytics',
+            component: Analytics,
+            meta: { title: '分析报告' }
+          }
+        ]
+      },
+      // 保留原有路由作为重定向
       {
         path: 'ops/jenkins',
-        name: 'jenkins',
-        component: () => import('../views/ops/Jenkins.vue')
+        redirect: '/jenkins/jobs'
       },
       {
         path: 'ops/domain',
@@ -142,6 +191,13 @@ const routes = [
         path: 'ai/sre-assistant',
         name: 'sre-assistant',
         component: () => import('../views/ai/SREAssistant.vue')
+      },
+      
+      // 测试路由
+      {
+        path: 'test/simple',
+        name: 'simple-test',
+        component: () => import('../views/test/SimpleTest.vue')
       }
     ]
   }
@@ -152,12 +208,9 @@ const router = createRouter({
   routes
 })
 
-// 修改路由守卫，临时跳过认证用于测试
+// 临时完全禁用路由守卫用于调试
 router.beforeEach((to, from, next) => {
-  console.log('Route navigation:', { to, from });
-  
-  // 临时跳过所有认证检查
-  console.log('Auth check bypassed, proceeding to:', to.path);
+  console.log('Router beforeEach - navigating to:', to.path);
   next();
 })
 

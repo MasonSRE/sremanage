@@ -123,12 +123,34 @@ import {
   SparklesIcon,
   RocketLaunchIcon
 } from '@heroicons/vue/24/outline'
+import { onMounted, watch } from 'vue'
 
 const route = useRoute()
 const router = useRouter() 
 const collapsed = ref(false)
 const activeMenu = ref('dashboard')
 const username = ref(localStorage.getItem('username'))
+
+// 根据当前路由设置activeMenu
+const setActiveMenuFromRoute = () => {
+  const currentRouteName = route.name
+  if (!currentRouteName) return
+  
+  // 查找当前路由对应的父菜单
+  for (const menu of menus) {
+    if (menu.key === currentRouteName) {
+      activeMenu.value = menu.key
+      return
+    }
+    if (menu.children) {
+      const hasChildRoute = menu.children.some(child => child.key === currentRouteName)
+      if (hasChildRoute) {
+        activeMenu.value = menu.key
+        return
+      }
+    }
+  }
+}
 
 const menus = [
   {
@@ -151,10 +173,21 @@ const menus = [
     label: '运维操作',
     children: [
       { key: 'cdn-management', icon: CloudIcon, label: 'CDN管理' },
-      { key: 'jenkins', icon: WrenchScrewdriverIcon, label: 'Jenkins管理' },
       { key: 'domain', icon: GlobeAltIcon, label: '域名管理' },
       { key: 'migration', icon: ArrowsRightLeftIcon, label: '迁移计划' },
       { key: 'batch-command', icon: CommandLineIcon, label: '批量操作' }
+    ]
+  },
+  {
+    key: 'jenkins',
+    icon: WrenchScrewdriverIcon,
+    label: 'Jenkins管理',
+    children: [
+      { key: 'jenkins-jobs', icon: FolderIcon, label: '任务列表' },
+      { key: 'jenkins-create', icon: DocumentDuplicateIcon, label: '创建任务' },
+      { key: 'jenkins-monitor', icon: ComputerDesktopIcon, label: '构建监控' },
+      { key: 'jenkins-instances', icon: ServerIcon, label: '实例管理' },
+      { key: 'jenkins-analytics', icon: SignalIcon, label: '分析报告' }
     ]
   },
   {
@@ -249,6 +282,15 @@ const handleLogout = () => {
     router.push('/login')
   })
 }
+
+// 初始化和路由监听
+onMounted(() => {
+  setActiveMenuFromRoute()
+})
+
+watch(() => route.name, () => {
+  setActiveMenuFromRoute()
+})
 </script>
 
 <style scoped>

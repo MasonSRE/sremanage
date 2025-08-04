@@ -1,0 +1,29 @@
+# Phase 5 新增依赖包
+# 数据加密和安全功能
+cryptography>=3.4.8
+paramiko>=2.8.0
+
+# 性能监控和数据处理
+psutil>=5.8.0
+
+# 数据库优化
+PyMySQL>=1.0.2
+mysqlclient>=2.1.0
+
+# Redis缓存支持
+redis>=4.0.0
+
+# 异步处理
+asyncio-throttle>=1.0.2
+
+# 现有依赖确认
+Flask>=2.0.0
+Flask-JWT-Extended>=4.0.0
+requests>=2.25.0
+python-dateutil>=2.8.0
+
+# 开发和测试工具
+pytest>=6.0.0
+pytest-cov>=2.12.0
+black>=21.0.0
+flake8>=3.9.0
