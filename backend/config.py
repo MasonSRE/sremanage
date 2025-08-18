@@ -1,13 +1,21 @@
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# 加载.env文件
+load_dotenv()
 
 class Config:
-    # 基础配置
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev_secret_key')
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'm666123')  # 从环境变量获取JWT密钥
+    # 基础配置 - 必须从环境变量获取，不提供默认值
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')  # 从环境变量获取JWT密钥
+    
+    # 验证必要的配置是否存在
+    if not JWT_SECRET_KEY:
+        raise ValueError("JWT_SECRET_KEY must be set in environment variables")
     
     # Session配置
-    SESSION_COOKIE_SECURE = False  # 如果不是HTTPS，设置为False
+    SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)
@@ -16,21 +24,25 @@ class Config:
     CORS_SUPPORTS_CREDENTIALS = True
     CORS_EXPOSE_HEADERS = ['Set-Cookie']
     
-    # 数据库配置 - 使用本地MySQL容器
-    DB_HOST = os.getenv('DB_HOST', 'localhost')
+    # 数据库配置 - 必须从环境变量获取
+    DB_HOST = os.getenv('DB_HOST')
     DB_PORT = int(os.getenv('DB_PORT', 3306))
-    DB_USER = os.getenv('DB_USER', 'root')
-    DB_PASSWORD = os.getenv('DB_PASSWORD', 'Uodeb2Af4AIbjGC4vWoGmJqoF2A')
-    DB_NAME = os.getenv('DB_NAME', 'ops_management')
+    DB_USER = os.getenv('DB_USER')
+    DB_PASSWORD = os.getenv('DB_PASSWORD')
+    DB_NAME = os.getenv('DB_NAME')
+    
+    # 验证数据库配置
+    if not all([DB_HOST, DB_USER, DB_PASSWORD, DB_NAME]):
+        raise ValueError("Database configuration (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME) must be set in environment variables")
     
     # JWT配置
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     
     # 跨域配置
-    CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://127.0.0.1:5173,http://localhost:5173').split(',')
+    CORS_ORIGINS = os.getenv('CORS_ORIGINS', '').split(',') if os.getenv('CORS_ORIGINS') else []
     
     # Cookie配置
-    COOKIE_DOMAIN = os.getenv('COOKIE_DOMAIN', '127.0.0.1')
+    COOKIE_DOMAIN = os.getenv('COOKIE_DOMAIN')
 
     # 日志配置
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
@@ -71,17 +83,9 @@ class Config:
         os.makedirs('cache/performance', exist_ok=True)
         os.makedirs('cache/security', exist_ok=True)
         
-        # 生成加密密钥（如果不存在）
+        # 验证加密密钥是否存在
         if not app.config.get('ENCRYPTION_MASTER_KEY'):
-            from cryptography.fernet import Fernet
-            key = Fernet.generate_key().decode()
-            app.config['ENCRYPTION_MASTER_KEY'] = key
-            # 写入到.env文件
-            try:
-                with open('.env', 'a') as f:
-                    f.write(f'\nENCRYPTION_MASTER_KEY={key}\n')
-            except:
-                pass
+            raise ValueError("ENCRYPTION_MASTER_KEY must be set in environment variables")
         
         # 初始化Phase 5组件
         try:
